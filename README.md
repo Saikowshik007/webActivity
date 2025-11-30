@@ -7,6 +7,7 @@ A Python-based network monitoring tool that captures and logs device-level WiFi 
 
 - **Real-time Network Monitoring**: Captures DNS queries and HTTP/HTTPS connection attempts
 - **Device Tracking**: Automatically identifies and tracks devices by MAC and IP address
+- **Device Filtering**: Monitor only specific devices of interest (e.g., kids' devices, IoT devices)
 - **Historical Data**: Stores all activity in SQLite database for historical analysis
 - **Web Dashboard**: Beautiful, responsive web interface to view network activity
 - **CLI Tools**: Command-line interface for querying network history
@@ -129,6 +130,65 @@ python query_history.py --top
 python query_history.py --top --hours 168
 ```
 
+### 4. Filter Devices (Monitor Only Specific Devices)
+
+By default, the monitor captures activity from ALL devices on your network. You can configure it to monitor only specific devices of interest.
+
+**View current filter status and detected devices:**
+```bash
+python manage_devices.py --status
+```
+
+**Interactive mode - Select devices from detected list:**
+```bash
+# First, run the monitor briefly to detect devices
+python network_monitor.py
+# Ctrl+C to stop after a few seconds
+
+# Then use interactive mode to select devices
+python manage_devices.py --interactive
+```
+
+**Add specific device to monitoring list:**
+```bash
+python manage_devices.py --add AA:BB:CC:DD:EE:FF
+```
+
+**Enable filtering (monitor only interested devices):**
+```bash
+python manage_devices.py --enable-filter
+```
+
+**Disable filtering (monitor all devices again):**
+```bash
+python manage_devices.py --disable-filter
+```
+
+**Remove device from monitoring list:**
+```bash
+python manage_devices.py --remove AA:BB:CC:DD:EE:FF
+```
+
+**Example workflow:**
+```bash
+# 1. Run monitor to detect all devices
+python network_monitor.py
+# Let it run for a few minutes, then Ctrl+C
+
+# 2. View all detected devices
+python manage_devices.py --status
+
+# 3. Add specific devices (e.g., your kids' devices)
+python manage_devices.py --add AA:BB:CC:DD:EE:FF
+python manage_devices.py --add 11:22:33:44:55:66
+
+# 4. Enable filtering to monitor only those devices
+python manage_devices.py --enable-filter
+
+# 5. Start monitoring again (now only captures those 2 devices)
+python network_monitor.py
+```
+
 ## Example Output
 
 ### Web Interface
@@ -159,10 +219,15 @@ webActivity/
 ├── network_monitor.py      # Main monitoring script (run with admin/root)
 ├── web_viewer.py           # Web interface server
 ├── query_history.py        # CLI query tool
+├── manage_devices.py       # Device filter management tool
 ├── requirements.txt        # Python dependencies
+├── device_filter.json      # Device filter configuration (created on first run)
 ├── network_activity.db     # SQLite database (created on first run)
+├── start_monitor.bat       # Windows launcher for monitor
+├── start_viewer.bat        # Windows launcher for web viewer
 ├── templates/
 │   └── index.html         # Web interface HTML
+├── QUICKSTART.md           # Quick start guide
 └── README.md              # This file
 ```
 
@@ -172,8 +237,9 @@ webActivity/
 2. **DNS Monitoring**: Intercepts DNS queries (UDP port 53) to see what domains devices are looking up
 3. **Connection Tracking**: Monitors TCP connections to ports 80 (HTTP) and 443 (HTTPS)
 4. **Device Identification**: Extracts MAC and IP addresses to identify unique devices
-5. **Data Storage**: Logs all activity to SQLite database for historical analysis
-6. **Visualization**: Provides web and CLI interfaces to explore the data
+5. **Device Filtering**: Optionally filters packets to monitor only specific devices of interest
+6. **Data Storage**: Logs all activity to SQLite database for historical analysis
+7. **Visualization**: Provides web and CLI interfaces to explore the data
 
 ## Security & Privacy Notes
 

@@ -87,6 +87,57 @@ Due to HTTPS encryption:
 - ✅ You can see: `google.com` was queried
 - ❌ You cannot see: The actual search terms
 
+## Monitor Only Specific Devices (Optional)
+
+By default, the monitor tracks ALL devices. You can filter to monitor only specific devices (e.g., your kids' devices).
+
+### Quick Filter Setup
+
+```bash
+# 1. First, run monitor to discover devices
+python network_monitor.py
+# Let it run for a minute, then press Ctrl+C
+
+# 2. See all detected devices
+python manage_devices.py --status
+
+# 3. Add devices you want to monitor
+python manage_devices.py --add AA:BB:CC:DD:EE:FF
+python manage_devices.py --add 11:22:33:44:55:66
+
+# 4. Enable filtering
+python manage_devices.py --enable-filter
+
+# 5. Restart monitor (now only tracks those devices)
+python network_monitor.py
+```
+
+### Interactive Mode (Easier!)
+
+```bash
+# Run this to select devices from a menu
+python manage_devices.py --interactive
+```
+
+### Filter Management Commands
+
+```bash
+# View filter status
+python manage_devices.py --status
+
+# Add device to monitor list
+python manage_devices.py --add <MAC_ADDRESS>
+
+# Remove device from list
+python manage_devices.py --remove <MAC_ADDRESS>
+
+# Enable filtering (monitor only interested devices)
+python manage_devices.py --enable-filter
+
+# Disable filtering (monitor all devices)
+python manage_devices.py --disable-filter
+```
+
 ## Common Issues
 
 ### "Permission denied"

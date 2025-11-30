@@ -1,0 +1,5 @@
+{
+  "monitor_all_devices": true,
+  "interested_devices": [],
+  "description": "Add MAC addresses of devices you want to monitor. Set monitor_all_devices to false to enable filtering."
+}

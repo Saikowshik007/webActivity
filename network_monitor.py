@@ -11,14 +11,51 @@ from scapy.layers.inet import TCP, UDP
 import threading
 import signal
 import sys
+import json
+import os
 from collections import defaultdict
 
 class NetworkMonitor:
-    def __init__(self, db_path='network_activity.db'):
+    def __init__(self, db_path='network_activity.db', config_path='device_filter.json'):
         self.db_path = db_path
+        self.config_path = config_path
         self.running = True
         self.device_cache = {}
+        self.filter_config = self.load_filter_config()
         self.init_database()
+
+    def load_filter_config(self):
+        """Load device filter configuration"""
+        if not os.path.exists(self.config_path):
+            # Create default config
+            default_config = {
+                "monitor_all_devices": True,
+                "interested_devices": [],
+                "description": "Add MAC addresses of devices you want to monitor. Set monitor_all_devices to false to enable filtering."
+            }
+            with open(self.config_path, 'w') as f:
+                json.dump(default_config, f, indent=2)
+            return default_config
+
+        try:
+            with open(self.config_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[!] Error loading config: {e}")
+            return {"monitor_all_devices": True, "interested_devices": []}
+
+    def is_device_allowed(self, mac_address):
+        """Check if device should be monitored based on filter config"""
+        # If monitoring all devices, allow everything
+        if self.filter_config.get('monitor_all_devices', True):
+            return True
+
+        # Normalize MAC address for comparison
+        mac_normalized = mac_address.upper().strip()
+
+        # Check if device is in interested list
+        interested_devices = [mac.upper().strip() for mac in self.filter_config.get('interested_devices', [])]
+        return mac_normalized in interested_devices
 
     def init_database(self):
         """Initialize SQLite database with required tables"""
@@ -113,6 +150,10 @@ class NetworkMonitor:
                 source_ip = packet[IP].src if packet.haslayer(IP) else 'Unknown'
                 mac_address = packet[Ether].src if packet.haslayer(Ether) else 'Unknown'
 
+                # Check if device is allowed
+                if not self.is_device_allowed(mac_address):
+                    return
+
                 # Get or create device
                 device_id = self.get_or_create_device(mac_address, source_ip)
 
@@ -144,6 +185,10 @@ class NetworkMonitor:
 
                 # Get MAC address
                 mac_address = packet[Ether].src if packet.haslayer(Ether) else 'Unknown'
+
+                # Check if device is allowed
+                if not self.is_device_allowed(mac_address):
+                    return
 
                 # Only log outbound connections (from local network)
                 if not source_ip.startswith(('192.168.', '10.', '172.16.')):
@@ -200,6 +245,16 @@ class NetworkMonitor:
         print(f"[*] Database: {self.db_path}")
         if interface:
             print(f"[*] Interface: {interface}")
+
+        # Show filter status
+        if self.filter_config.get('monitor_all_devices', True):
+            print("[*] Filter Mode: MONITORING ALL DEVICES")
+        else:
+            interested_count = len(self.filter_config.get('interested_devices', []))
+            print(f"[*] Filter Mode: MONITORING {interested_count} INTERESTED DEVICE(S)")
+            for mac in self.filter_config.get('interested_devices', []):
+                print(f"    - {mac}")
+
         print("[*] Monitoring DNS queries and web connections...")
         print("[*] Press Ctrl+C to stop\n")
 

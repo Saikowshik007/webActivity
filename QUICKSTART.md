@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-## 3-Step Setup
+## 4-Step Setup
 
 ### Step 1: Install Dependencies
 
@@ -10,7 +10,21 @@ pip install -r requirements.txt
 
 **Windows users**: Also download and install [Npcap](https://npcap.com/#download)
 
-### Step 2: Start Monitoring (Run as Administrator!)
+### Step 2: Discover All Devices (IMPORTANT!)
+
+The monitor only captures traffic it can see. To discover ALL devices on your network, run the scanner first:
+
+```bash
+# Windows: Run as Administrator
+python scan_network.py
+
+# Linux/Mac
+sudo python scan_network.py
+```
+
+This will find and save all devices on your network, even if they're not currently active.
+
+### Step 3: Start Monitoring (Run as Administrator!)
 
 **Windows:**
 1. Right-click `start_monitor.bat` → "Run as Administrator"
@@ -31,7 +45,7 @@ Network Activity Monitor Started
 [DNS] 192.168.1.10 -> google.com
 ```
 
-### Step 3: View Your Data
+### Step 4: View Your Data
 
 **Option A: Web Interface (Recommended)**
 

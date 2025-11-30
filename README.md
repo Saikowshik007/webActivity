@@ -73,7 +73,38 @@ python network_monitor.py --help
 
 ## Usage
 
-### 1. Start Network Monitoring
+### 1. Discover All Devices on Your Network
+
+**IMPORTANT**: Passive monitoring may only capture devices that are actively communicating. To discover ALL devices on your network, run the network scanner first:
+
+```bash
+# Windows: Run as Administrator
+python scan_network.py
+
+# Linux/Mac
+sudo python scan_network.py
+```
+
+This will:
+- Scan your entire network using ARP
+- Discover all connected devices
+- Save devices to the database with their MAC addresses, IPs, and hostnames
+- Show which devices are online vs. offline
+
+**Example output:**
+```
+DISCOVERED DEVICES (5 found)
+╒═══════════════╤═══════════════════╤════════════════════╤═════════════╕
+│ IP Address    │ MAC Address       │ Hostname           │ Notes       │
+├───────────────┼───────────────────┼────────────────────┼─────────────┤
+│ 192.168.1.1   │ AA:BB:CC:DD:EE:FF │ Router             │             │
+│ 192.168.1.10  │ 11:22:33:44:55:66 │ DESKTOP-PC         │ THIS DEVICE │
+│ 192.168.1.15  │ 77:88:99:AA:BB:CC │ iPhone             │             │
+│ 192.168.1.20  │ DD:EE:FF:00:11:22 │ Android-Tablet     │             │
+╘═══════════════╧═══════════════════╧════════════════════╧═════════════╛
+```
+
+### 2. Start Network Monitoring
 
 **Windows (Run as Administrator):**
 ```bash
@@ -90,7 +121,7 @@ The monitor will start capturing network activity and storing it in `network_act
 
 Leave this running in the background to collect data.
 
-### 2. View Data via Web Interface
+### 3. View Data via Web Interface
 
 In a separate terminal:
 
@@ -107,7 +138,7 @@ The web interface provides:
 - Activity timeline
 - Device statistics
 
-### 3. Query Data via Command Line
+### 4. Query Data via Command Line
 
 ```bash
 # List all devices
@@ -130,7 +161,7 @@ python query_history.py --top
 python query_history.py --top --hours 168
 ```
 
-### 4. Filter Devices (Monitor Only Specific Devices)
+### 5. Filter Devices (Monitor Only Specific Devices)
 
 By default, the monitor captures activity from ALL devices on your network. You can configure it to monitor only specific devices of interest.
 
@@ -217,6 +248,7 @@ DEVICES ON NETWORK
 ```
 webActivity/
 ├── network_monitor.py      # Main monitoring script (run with admin/root)
+├── scan_network.py         # Network scanner to discover all devices
 ├── web_viewer.py           # Web interface server
 ├── query_history.py        # CLI query tool
 ├── manage_devices.py       # Device filter management tool
@@ -228,6 +260,7 @@ webActivity/
 ├── templates/
 │   └── index.html         # Web interface HTML
 ├── QUICKSTART.md           # Quick start guide
+├── DEVICE_FILTERING.md     # Device filtering guide
 └── README.md              # This file
 ```
 
@@ -265,6 +298,25 @@ pip install -r requirements.txt
 - Verify network interface is active
 - On Windows, ensure Npcap is installed
 - Try specifying network interface: Check available interfaces first
+
+### Not seeing all devices on the network
+**This is the most common issue!** Passive packet capture only shows devices that are actively communicating.
+
+**Solution**: Use the network scanner to discover all devices:
+```bash
+python scan_network.py
+```
+
+**Why this happens**:
+- Modern networks use switches that only send traffic to relevant ports
+- Devices that aren't currently browsing won't generate DNS queries
+- The monitor can only capture traffic it can "see"
+
+**How to see all device activity**:
+1. Run `scan_network.py` first to discover all devices
+2. Then run the monitor - it will now capture activity from all discovered devices
+3. Promiscuous mode is enabled but may not work on all WiFi adapters
+4. For best results, run on your router (if it supports Python) or enable port mirroring
 
 ### Database locked errors
 - Only run one instance of `network_monitor.py` at a time

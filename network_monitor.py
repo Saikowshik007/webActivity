@@ -260,11 +260,13 @@ class NetworkMonitor:
 
         try:
             # Capture DNS (UDP port 53) and web traffic (TCP ports 80, 443)
+            # Enable promiscuous mode to capture all packets on the network
             sniff(
                 filter="udp port 53 or tcp port 80 or tcp port 443",
                 prn=self.packet_handler,
                 iface=interface,
-                store=False
+                store=False,
+                promisc=True  # Enable promiscuous mode
             )
         except KeyboardInterrupt:
             print("\n[*] Stopping monitor...")
@@ -286,6 +288,8 @@ def main():
     ║         Device-Level WiFi Activity Tracking               ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
+
+    print("[*] TIP: Not seeing all devices? Run 'python scan_network.py' to discover all devices on your network\n")
 
     monitor = NetworkMonitor()
 

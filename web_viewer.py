@@ -232,6 +232,169 @@ def search():
     conn.close()
     return jsonify(results)
 
+@app.route('/api/device/<int:device_id>/searches')
+def get_device_searches(device_id):
+    """Get search queries for a device (from HTTPS interception)"""
+    hours = request.args.get('hours', 24, type=int)
+    limit = request.args.get('limit', 100, type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='search_queries'")
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify([])
+
+    cursor.execute('''
+        SELECT
+            search_engine,
+            query,
+            timestamp,
+            source_ip
+        FROM search_queries
+        WHERE device_id = ?
+        AND timestamp >= datetime('now', '-' || ? || ' hours')
+        ORDER BY timestamp DESC
+        LIMIT ?
+    ''', (device_id, hours, limit))
+
+    searches = []
+    for row in cursor.fetchall():
+        searches.append({
+            'search_engine': row['search_engine'],
+            'query': row['query'],
+            'timestamp': row['timestamp'],
+            'source_ip': row['source_ip']
+        })
+
+    conn.close()
+    return jsonify(searches)
+
+@app.route('/api/device/<int:device_id>/urls')
+def get_device_urls(device_id):
+    """Get URLs visited by a device (from HTTPS interception)"""
+    hours = request.args.get('hours', 24, type=int)
+    limit = request.args.get('limit', 100, type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='urls_visited'")
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify([])
+
+    cursor.execute('''
+        SELECT
+            url,
+            full_url,
+            method,
+            status_code,
+            timestamp,
+            source_ip
+        FROM urls_visited
+        WHERE device_id = ?
+        AND timestamp >= datetime('now', '-' || ? || ' hours')
+        ORDER BY timestamp DESC
+        LIMIT ?
+    ''', (device_id, hours, limit))
+
+    urls = []
+    for row in cursor.fetchall():
+        urls.append({
+            'url': row['url'],
+            'full_url': row['full_url'],
+            'method': row['method'],
+            'status_code': row['status_code'],
+            'timestamp': row['timestamp'],
+            'source_ip': row['source_ip']
+        })
+
+    conn.close()
+    return jsonify(urls)
+
+@app.route('/api/all_searches')
+def get_all_searches():
+    """Get all search queries across all devices"""
+    hours = request.args.get('hours', 24, type=int)
+    limit = request.args.get('limit', 50, type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='search_queries'")
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify([])
+
+    cursor.execute('''
+        SELECT
+            sq.search_engine,
+            sq.query,
+            sq.timestamp,
+            sq.source_ip,
+            d.mac_address,
+            d.hostname
+        FROM search_queries sq
+        LEFT JOIN devices d ON sq.device_id = d.id
+        WHERE sq.timestamp >= datetime('now', '-' || ? || ' hours')
+        ORDER BY sq.timestamp DESC
+        LIMIT ?
+    ''', (hours, limit))
+
+    searches = []
+    for row in cursor.fetchall():
+        searches.append({
+            'search_engine': row['search_engine'],
+            'query': row['query'],
+            'timestamp': row['timestamp'],
+            'source_ip': row['source_ip'],
+            'device': row['hostname'] or row['mac_address']
+        })
+
+    conn.close()
+    return jsonify(searches)
+
+@app.route('/api/top_sites')
+def get_top_sites():
+    """Get most visited sites"""
+    hours = request.args.get('hours', 24, type=int)
+    limit = request.args.get('limit', 20, type=int)
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='urls_visited'")
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify([])
+
+    cursor.execute('''
+        SELECT
+            url,
+            COUNT(*) as count
+        FROM urls_visited
+        WHERE timestamp >= datetime('now', '-' || ? || ' hours')
+        GROUP BY url
+        ORDER BY count DESC
+        LIMIT ?
+    ''', (hours, limit))
+
+    sites = []
+    for row in cursor.fetchall():
+        sites.append({
+            'url': row['url'],
+            'count': row['count']
+        })
+
+    conn.close()
+    return jsonify(sites)
+
 if __name__ == '__main__':
     if not os.path.exists(DB_PATH):
         print(f"[!] Database not found: {DB_PATH}")
